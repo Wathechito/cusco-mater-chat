@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cusco Mater - Chat Obstétrico</title>
+    <style>
+        /* Estilos Generales */
+        body { font-family: 'Segoe UI', sans-serif; background-color: #fce4ec; margin: 0; display: flex; justify-content: center; height: 100vh; }
+        .chat-container { width: 100%; max-width: 420px; background: white; display: flex; flex-direction: column; box-shadow: 0 4px 20px rgba(0,0,0,0.1); height: 100%; position: relative; }
+        
+        /* Encabezado */
+        .header { background: linear-gradient(135deg, #ec407a, #d81b60); color: white; padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
+        
+        /* Área de Mensajes */
+        .messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background-color: #fff; scroll-behavior: smooth; }
+        .message { padding: 12px 16px; border-radius: 18px; max-width: 85%; line-height: 1.5; font-size: 0.95rem; position: relative; word-wrap: break-word; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Colores de burbujas */
+        .bot { background-color: #fce4ec; color: #333; align-self: flex-start; border-bottom-left-radius: 4px; border: 1px solid #f8bbd0; }
+        .user { background-color: #ec407a; color: white; align-self: flex-end; border-bottom-right-radius: 4px; box-shadow: 0 2px 5px rgba(236, 64, 122, 0.2); }
+        
+        /* Área de Input */
+        .input-area { padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px; background: #fff; align-items: center; }
+        input { flex: 1; padding: 12px 15px; border: 1px solid #ddd; border-radius: 25px; outline: none; font-size: 1rem; transition: border-color 0.3s; }
+        input:focus { border-color: #ec407a; }
+        button { padding: 12px 20px; background-color: #ec407a; color: white; border: none; border-radius: 25px; cursor: pointer; font-weight: bold; transition: background 0.3s; }
+        button:hover { background-color: #d81b60; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        
+        /* Estado de Carga */
+        .typing { font-size: 0.8rem; color: #888; margin-left: 20px; margin-bottom: 5px; font-style: italic; display: none; }
+        
+        /* INCENTIVO (Estado Vacío) */
+        .empty-state {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            text-align: center; color: #888; width: 80%;
+        }
+        .empty-state h1 { font-size: 3rem; margin: 0 0 10px 0; } /* Emoji grande */
+        .empty-state h3 { margin: 0 0 8px 0; color: #ec407a; }
+        .empty-state p { margin: 0; font-size: 0.9rem; line-height: 1.5; }
+    </style>
+</head>
+<body>
+
+<div class="chat-container">
+    <div class="header">
+        🤰 Cusco Mater 💛
+    </div>
+    
+    <div class="messages" id="messages">
+        <div id="emptyState" class="empty-state">
+            <h1>🤰</h1>
+            <h3>¡Bienvenida Mamita!</h3>
+            <p>Estoy lista para resolver tus dudas.<br>Escribe <b>"Hola"</b> para comenzar.</p>
+        </div>
+    </div>
+
+    <div class="typing" id="typing">Cusco Mater está escribiendo...</div>
+    
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Escribe tu mensaje aquí..." onkeypress="handleEnter(event)">
+        <button onclick="sendMessage()" id="sendBtn">Enviar</button>
+    </div>
+</div>
+
+<script>
+    // Crea una sesión única cada vez que se recarga la página
+    const sessionId = 'sesion_' + Math.random().toString(36).substr(2, 9);
+    
+    // 👇👇 PEGA AQUÍ TU URL DE N8N (WEBHOOK DE PRODUCCIÓN) 👇👇
+    const WEBHOOK_URL = 'https://guiselle.app.n8n.cloud/webhook/chat'; 
+
+    async function sendMessage() {
+        const input = document.getElementById('userInput');
+        const text = input.value.trim();
+        if (!text) return;
+
+        // 1. Ocultar el incentivo visual apenas se envía el primer mensaje
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.style.display = 'none';
+
+        // 2. Mostrar mensaje del usuario
+        addMessage(text, 'user');
+        input.value = '';
+        
+        // 3. Bloquear input mientras el bot piensa
+        const sendBtn = document.getElementById('sendBtn');
+        sendBtn.disabled = true;
+        document.getElementById('typing').style.display = 'block';
+
+        try {
+            // 4. Enviar a n8n
+            const response = await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    chatInput: text, 
+                    sessionId: sessionId 
+                })
+            });
+            
+            const data = await response.json();
+            
+            // 5. Mostrar respuesta del bot
+            if(data.output) {
+                addMessage(data.output, 'bot');
+            } else {
+                addMessage("Ups, no recibí respuesta. Intenta de nuevo.", 'bot');
+            }
+
+        } catch (error) {
+            console.error(error);
+            addMessage("Lo siento mamita, parece que mi conexión falló. 😔", 'bot');
+        } finally {
+            sendBtn.disabled = false;
+            document.getElementById('typing').style.display = 'none';
+            document.getElementById('userInput').focus();
+        }
+    }
+
+    function addMessage(text, sender) {
+        const div = document.createElement('div');
+        div.className = `message ${sender}`;
+        // Convierte saltos de línea y negritas simples
+        let formattedText = text.replace(/\n/g, '<br>');
+        formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); // Negritas Markdown
+        div.innerHTML = formattedText;
+        
+        const container = document.getElementById('messages');
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function handleEnter(e) {
+        if (e.key === 'Enter') sendMessage();
+    }
+</script>
+
+</body>
+</html>
