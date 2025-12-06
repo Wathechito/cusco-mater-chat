@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Cusco Mater - Chat Obstétrico</title>
+    <title>Metropolitano Prenatal ChatBot</title>
     <style>
-        /* --- CONFIGURACIÓN RESPONSIVE AVANZADA --- */
+        /* --- VARIABLES Y CONFIGURACIÓN --- */
         :root {
-            /* Variables para colores */
             --primary: #ec407a;
             --primary-dark: #d81b60;
             --bg-color: #fce4ec;
@@ -21,50 +20,144 @@
             margin: 0; 
             display: flex; 
             justify-content: center; 
-            /* 100dvh se adapta a la barra de dirección del navegador móvil */
             height: 100dvh; 
-            overflow: hidden; /* Evita scroll en el body */
+            overflow: hidden; 
         }
 
+        /* --- MINI POP-UP (MODAL) --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(252, 228, 236, 0.9);
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-box {
+            background: white;
+            width: 85%;
+            max-width: 320px;
+            padding: 0; 
+            border-radius: 25px;
+            box-shadow: 0 10px 25px rgba(236, 64, 122, 0.3);
+            text-align: center;
+            transform: scale(1);
+            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden; 
+        }
+
+        .modal-header-img {
+            background-color: var(--primary); 
+            padding: 1px 0; 
+            width: 100%;
+        }
+
+        .modal-logo-big {
+            height: 55px; 
+            width: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .modal-content-text {
+            padding: 20px 25px;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-box h3 {
+            color: var(--primary);
+            margin: 0 0 5px 0;
+            font-size: 1.4rem;
+        }
+
+        .modal-box p {
+            color: #666;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 12px 20px;
+            border: 2px solid #eee;
+            border-radius: 50px;
+            font-size: 1rem;
+            text-align: center;
+            outline: none;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .name-input:focus {
+            border-color: var(--primary);
+        }
+
+        .btn-start {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, background 0.3s;
+        }
+
+        .btn-start:hover { background-color: var(--primary-dark); }
+        .btn-start:active { transform: scale(0.98); }
+
+        /* --- CONTENEDOR DEL CHAT --- */
         .chat-container { 
             width: 100%; 
-            max-width: 450px; /* Un poco más ancho para tablets */
+            max-width: 450px; 
             background: var(--chat-bg); 
             display: flex; 
             flex-direction: column; 
             height: 100%; 
             position: relative; 
-            /* Sombra suave solo en escritorio */
             box-shadow: 0 0 20px rgba(0,0,0,0.1); 
         }
 
-        /* En celular, quitamos la sombra y ocupamos todo el espacio */
         @media (max-width: 480px) {
-            .chat-container {
-                max-width: 100%;
-                box-shadow: none;
-            }
+            .chat-container { box-shadow: none; }
         }
         
-        /* --- ENCABEZADO --- */
         .header { 
             background: linear-gradient(135deg, var(--primary), var(--primary-dark)); 
             color: white; 
-            padding: 15px; 
+            padding: 12px 15px; 
             text-align: center; 
             font-weight: bold; 
-            font-size: 1.2rem; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            gap: 10px; 
+            font-size: 1.1rem; 
+            padding-top: calc(12px + env(safe-area-inset-top)); 
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
             z-index: 10;
-            /* Respetar el 'Notch' o ceja superior del celular */
-            padding-top: calc(15px + env(safe-area-inset-top)); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* AJUSTE DE ESPACIO: Reducido de 10px a 4px */
+            gap: 4px;
         }
         
-        /* --- MENSAJES --- */
+        .header-logo-small {
+            height: 35px;
+            width: auto;
+        }
+
         .messages { 
             flex: 1; 
             padding: 15px; 
@@ -74,7 +167,6 @@
             gap: 12px; 
             background-color: #fff; 
             scroll-behavior: smooth; 
-            /* Evita rebote elástico en iOS */
             -webkit-overflow-scrolling: touch; 
         }
 
@@ -84,11 +176,10 @@
             max-width: 85%; 
             line-height: 1.5; 
             font-size: 0.95rem; 
-            position: relative; 
             word-wrap: break-word; 
             animation: fadeIn 0.3s ease; 
         }
-
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .bot { 
@@ -107,7 +198,6 @@
             box-shadow: 0 2px 5px rgba(236, 64, 122, 0.2); 
         }
         
-        /* --- INPUT AREA --- */
         .input-area { 
             padding: 15px; 
             border-top: 1px solid #eee; 
@@ -115,22 +205,20 @@
             gap: 10px; 
             background: #fff; 
             align-items: center; 
-            /* Respetar la barra inferior de gestos en iPhone */
             padding-bottom: calc(15px + env(safe-area-inset-bottom)); 
         }
 
-        input { 
+        input[type="text"] { 
             flex: 1; 
             padding: 12px 15px; 
             border: 1px solid #ddd; 
             border-radius: 25px; 
             outline: none; 
-            /* 16px es clave para evitar que iOS haga zoom al escribir */
             font-size: 16px; 
             transition: border-color 0.3s; 
         }
 
-        input:focus { border-color: var(--primary); }
+        input[type="text"]:focus { border-color: var(--primary); }
 
         button { 
             padding: 12px 20px; 
@@ -140,15 +228,11 @@
             border-radius: 25px; 
             cursor: pointer; 
             font-weight: bold; 
-            transition: background 0.3s; 
-            /* Evita que el botón se aplaste */
             flex-shrink: 0; 
         }
-
         button:hover { background-color: var(--primary-dark); }
         button:disabled { background-color: #ccc; cursor: not-allowed; }
         
-        /* --- ESTADO DE CARGA --- */
         .typing { 
             font-size: 0.8rem; 
             color: #888; 
@@ -157,71 +241,106 @@
             font-style: italic; 
             display: none; 
         }
-        
-        /* --- ESTADO VACÍO (Incentivo) --- */
-        .empty-state {
-            position: absolute; 
-            top: 45%; /* Un poco más arriba para dejar espacio al teclado */
-            left: 50%; 
-            transform: translate(-50%, -50%);
-            text-align: center; 
-            color: #888; 
-            width: 90%;
-        }
-        .empty-state h1 { font-size: 3.5rem; margin: 0 0 10px 0; }
-        .empty-state h3 { margin: 0 0 8px 0; color: var(--primary); }
-        .empty-state p { margin: 0; font-size: 1rem; line-height: 1.5; }
     </style>
 </head>
 <body>
 
+<div id="modalOverlay" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-header-img">
+            <img src="logo-familia.png" alt="Familia" class="modal-logo-big">
+        </div>
+        
+        <div class="modal-content-text">
+            <h3>¡Bienvenida! 🤰</h3>
+            <p>¿Cuál es tu nombre?</p>
+            <input type="text" id="startName" class="name-input" placeholder="Escribe tu nombre aquí" autocomplete="off" onkeypress="handleStartEnter(event)">
+            <button class="btn-start" onclick="startChat()">Comenzar</button>
+        </div>
+    </div>
+</div>
+
 <div class="chat-container">
     <div class="header">
-        🤰 Cusco Mater 💛
+        <img src="logo-familia.png" alt="Logo" class="header-logo-small">
+        Metropolitano Prenatal 💛
     </div>
     
     <div class="messages" id="messages">
-        <div id="emptyState" class="empty-state">
-            <h1>🤰</h1>
-            <h3>¡Bienvenida Mamita!</h3>
-            <p>Estoy lista para resolver tus dudas.<br>Escribe <b>"Hola"</b> para comenzar.</p>
         </div>
-    </div>
 
-    <div class="typing" id="typing">Cusco Mater está escribiendo...</div>
+    <div class="typing" id="typing">Metropolitano Prenatal está escribiendo...</div>
     
     <div class="input-area">
         <input type="text" id="userInput" placeholder="Escribe tu mensaje aquí..." onkeypress="handleEnter(event)" autocomplete="off">
-        <button onclick="sendMessage()" id="sendBtn">Enviar</button>
+        <button onclick="sendManualMessage()" id="sendBtn">Enviar</button>
     </div>
 </div>
 
 <script>
-    // Generación de Sesión
+    // Configuración inicial
     const sessionId = 'sesion_' + Math.random().toString(36).substr(2, 9);
-    
-    // 👇👇 PEGA AQUÍ TU URL DE N8N (WEBHOOK DE PRODUCCIÓN) 👇👇
+    let userName = '';
+
+    // 👇👇 TU URL DE N8N 👇👇
     const WEBHOOK_URL = 'https://guiselle.app.n8n.cloud/webhook/chat'; 
 
-    async function sendMessage() {
+    // --- LÓGICA DE INICIO (POP-UP) ---
+    function startChat() {
+        const nameInput = document.getElementById('startName');
+        const overlay = document.getElementById('modalOverlay');
+        
+        const name = nameInput.value.trim();
+        
+        // Validación simple
+        if (!name) {
+            nameInput.style.borderColor = "red";
+            if (navigator.vibrate) navigator.vibrate(100);
+            return;
+        }
+
+        userName = name;
+        
+        // Ocultar pop-up
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+            overlay.style.display = 'none';
+        }, 300);
+
+        // Enviar saludo silencioso "Hola, me llamo [Nombre]"
+        const autoMessage = "Hola, me llamo " + userName;
+        processMessage(autoMessage, false);
+    }
+
+    function handleStartEnter(e) {
+        if (e.key === 'Enter') startChat();
+    }
+
+    // --- LÓGICA DEL CHAT ---
+    
+    function sendManualMessage() {
         const input = document.getElementById('userInput');
         const text = input.value.trim();
         if (!text) return;
-
-        // Ocultar incentivo
-        const emptyState = document.getElementById('emptyState');
-        if (emptyState) emptyState.style.display = 'none';
-
-        // Mostrar mensaje usuario
-        addMessage(text, 'user');
-        input.value = '';
         
-        // UI de carga
-        const sendBtn = document.getElementById('sendBtn');
-        sendBtn.disabled = true;
-        document.getElementById('typing').style.display = 'block';
+        // Mensajes manuales SÍ muestran burbuja (true)
+        processMessage(text, true); 
+        input.value = '';
+    }
 
-        // Scroll al fondo automático
+    async function processMessage(text, showUserBubble) {
+        if (showUserBubble) {
+            addMessage(text, 'user');
+        }
+
+        // Interfaz de carga
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typing');
+        const userInput = document.getElementById('userInput');
+        
+        sendBtn.disabled = true;
+        userInput.disabled = true; 
+        typingIndicator.style.display = 'block';
         scrollToBottom();
 
         try {
@@ -230,7 +349,8 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     chatInput: text, 
-                    sessionId: sessionId 
+                    sessionId: sessionId,
+                    name: userName 
                 })
             });
             
@@ -247,8 +367,9 @@
             addMessage("Lo siento mamita, parece que mi conexión falló. 😔", 'bot');
         } finally {
             sendBtn.disabled = false;
-            document.getElementById('typing').style.display = 'none';
-            document.getElementById('userInput').focus();
+            userInput.disabled = false;
+            typingIndicator.style.display = 'none';
+            userInput.focus();
             scrollToBottom();
         }
     }
@@ -257,7 +378,7 @@
         const div = document.createElement('div');
         div.className = `message ${sender}`;
         
-        // Renderizado simple de formato
+        // Formato básico de texto (saltos de línea y negritas)
         let formattedText = text.replace(/\n/g, '<br>');
         formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
         
@@ -273,7 +394,7 @@
     }
 
     function handleEnter(e) {
-        if (e.key === 'Enter') sendMessage();
+        if (e.key === 'Enter') sendManualMessage();
     }
 </script>
 
