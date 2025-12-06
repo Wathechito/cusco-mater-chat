@@ -53,7 +53,7 @@
             overflow: hidden; 
         }
 
-        /* DISEÑO DE CABECERA INTACTO */
+        /* DISEÑO DE CABECERA (Mantenido como pediste) */
         .modal-header-img {
             background-color: var(--primary); 
             padding: 1px 0; 
@@ -324,6 +324,9 @@
         const text = input.value.trim();
         if (!text) return;
         
+        // CORRECCIÓN 1: Forzamos que se cierre el teclado INMEDIATAMENTE al enviar
+        input.blur(); 
+        
         processMessage(text, true); 
         input.value = '';
     }
@@ -371,9 +374,9 @@
             userInput.disabled = false;
             typingIndicator.style.display = 'none';
             
-            // --- CORRECCIÓN MÓVIL ---
-            // Hemos eliminado "userInput.focus()" para que el teclado NO salte
-            // automáticamente. Ahora el usuario debe tocar para escribir.
+            // CORRECCIÓN 2: Forzamos Blur de nuevo por si el navegador intenta
+            // restaurar el foco automáticamente al rehabilitar el input.
+            userInput.blur();
             
             scrollToBottom();
         }
