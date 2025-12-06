@@ -53,6 +53,7 @@
             overflow: hidden; 
         }
 
+        /* TU DISEÑO DE CABECERA INTACTO */
         .modal-header-img {
             background-color: var(--primary); 
             padding: 1px 0; 
@@ -149,7 +150,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            /* AJUSTE DE ESPACIO: Reducido de 10px a 4px */
             gap: 4px;
         }
         
@@ -267,7 +267,7 @@
     </div>
     
     <div class="messages" id="messages">
-        </div>
+    </div>
 
     <div class="typing" id="typing">Metropolitano Prenatal está escribiendo...</div>
     
@@ -281,6 +281,11 @@
     // Configuración inicial
     const sessionId = 'sesion_' + Math.random().toString(36).substr(2, 9);
     let userName = '';
+
+    // --- CARGA DE SONIDOS ---
+    // Asegúrate de tener sent.mp3 y received.mp3 en la misma carpeta
+    const audioSent = new Audio('sent.mp3');
+    const audioReceived = new Audio('received.mp3');
 
     // 👇👇 TU URL DE N8N 👇👇
     const WEBHOOK_URL = 'https://guiselle.app.n8n.cloud/webhook/chat'; 
@@ -307,7 +312,7 @@
             overlay.style.display = 'none';
         }, 300);
 
-        // Enviar saludo silencioso "Hola, me llamo [Nombre]"
+        // Enviar saludo silencioso
         const autoMessage = "Hola, me llamo " + userName;
         processMessage(autoMessage, false);
     }
@@ -331,6 +336,9 @@
     async function processMessage(text, showUserBubble) {
         if (showUserBubble) {
             addMessage(text, 'user');
+            // SONIDO ENVIAR: Solo suena si el usuario escribió manualmente
+            // Usamos .catch por si el navegador bloquea el autoplay, que no rompa el chat
+            audioSent.play().catch(error => console.log('Audio bloqueado o no encontrado:', error));
         }
 
         // Interfaz de carga
@@ -358,6 +366,8 @@
             
             if(data.output) {
                 addMessage(data.output, 'bot');
+                // SONIDO RECIBIR: Suena cuando llega respuesta del bot
+                audioReceived.play().catch(error => console.log('Audio bloqueado o no encontrado:', error));
             } else {
                 addMessage("Ups, no recibí respuesta. Intenta de nuevo.", 'bot');
             }
@@ -378,7 +388,7 @@
         const div = document.createElement('div');
         div.className = `message ${sender}`;
         
-        // Formato básico de texto (saltos de línea y negritas)
+        // Formato básico de texto
         let formattedText = text.replace(/\n/g, '<br>');
         formattedText = formattedText.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>'); 
         
